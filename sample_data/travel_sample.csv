@@ -1,0 +1,9 @@
+Trip ID,Employee ID,Traveler Name,Cost Center,Segment Type,Departure Date,Origin,Destination,Vendor,Nights,Amount,Currency
+T-2024-00341,EMP-1042,Sarah Chen,CC-SALES,Air,01/15/2024,SFO,LHR,British Airways,,1240.00,USD
+T-2024-00341,EMP-1042,Sarah Chen,CC-SALES,Hotel,01/15/2024,,,Marriott Heathrow,3,540.00,GBP
+T-2024-00342,EMP-2218,Raj Patel,CC-ENG,Air,01/22/2024,HYD,SIN,IndiGo,,380.00,USD
+T-2024-00342,EMP-2218,Raj Patel,CC-ENG,Air,01/29/2024,SIN,HYD,IndiGo,,380.00,USD
+T-2024-00343,EMP-0891,Maria Santos,CC-EXEC,Air,02/05/2024,JFK,CDG,Air France,,3100.00,USD
+T-2024-00343,EMP-0891,Maria Santos,CC-EXEC,Hotel,02/05/2024,,,Four Seasons Paris,2,1800.00,EUR
+T-2024-00344,EMP-3301,Tom Wright,CC-OPS,Car,01/18/2024,,,Hertz,,145.00,USD
+T-2024-00345,EMP-1042,Sarah Chen,CC-SALES,Air,02/20/2024,LHR,JFK,British Airways,,980.00,USD

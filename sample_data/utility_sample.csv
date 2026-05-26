@@ -1,0 +1,6 @@
+Account Number,Meter Number,Service Address,Start Date,End Date,Usage,Unit,Tariff,Facility
+ACC-001-22340,MTR-8821,100 Industrial Pkwy Munich,12/28/2023,01/27/2024,148320,kWh,TG-7200,Munich HQ
+ACC-001-22340,MTR-8822,100 Industrial Pkwy Munich,01/28/2024,02/26/2024,162100,kWh,TG-7200,Munich HQ
+ACC-002-55218,MTR-3341,45 Commerce Dr Atlanta,12/27/2023,01/29/2024,89440,kWh,LG-2,Atlanta Office
+ACC-003-11090,MTR-9921,Warehouse Block C,01/01/2024,01/31/2024,220000,kWh,IDT,Distribution Center
+ACC-002-55218,MTR-3341,45 Commerce Dr Atlanta,01/30/2024,02/27/2024,-2200,kWh,LG-2,Atlanta Office
