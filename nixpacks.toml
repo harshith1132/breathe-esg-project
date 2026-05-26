@@ -1,5 +1,8 @@
-[phases.build]
-cmds = ['pip install -r requirements.txt']
+[phases."install"]
+cmds = ["pip install -r requirements.txt"]
+
+[phases."build"]
+cmds = []
 
 [start]
-cmd = 'gunicorn config.wsgi --log-file -'
+cmd = "gunicorn config.wsgi --log-file -"
