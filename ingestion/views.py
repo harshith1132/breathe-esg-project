@@ -1,4 +1,4 @@
-from django.utils import timezone
+import traceback
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.parsers import MultiPartParser
@@ -14,8 +14,9 @@ PARSER_MAP = {
     'TRAVEL': parse_travel_csv,
 }
 
-ELECTRICITY = 0.20493   
-DIESEL = 2.68801        
+ELECTRICITY = 0.20493
+DIESEL = 2.68801
+
 
 class UploadView(APIView):
     parser_classes = [MultiPartParser]
@@ -30,15 +31,16 @@ class UploadView(APIView):
             return Response({'error': 'data_source_id required'}, status=400)
 
         try:
-            data_source = DataSource.objects.get(
-                id=source_id,
-                organization=request.user.profile.organization
-            )
+            org = request.user.profile.organization
+        except Exception:
+            return Response({'error': 'No organization profile. Create a UserProfile in /admin.'}, status=400)
+
+        try:
+            data_source = DataSource.objects.get(id=source_id, organization=org)
         except DataSource.DoesNotExist:
             return Response({'error': 'Data source not found'}, status=404)
 
-        org = request.user.profile.organization
-
+        batch = None
         try:
             file_content = file.read()
             file.seek(0)
@@ -51,6 +53,7 @@ class UploadView(APIView):
                 file=file,
                 status='PROCESSING',
             )
+
             parser = PARSER_MAP[data_source.source_type]
             parsed_rows = parser(file_content)
 
@@ -97,8 +100,9 @@ class UploadView(APIView):
                 )
 
                 if p.get('activity_date') or p.get('posting_date') or p.get('departure_date'):
-                    date_val = p.get('activity_date') or p.get('posting_date') or p.get('departure_date')
-                    er_kwargs['activity_date'] = date_val
+                    er_kwargs['activity_date'] = (
+                        p.get('activity_date') or p.get('posting_date') or p.get('departure_date')
+                    )
                 if p.get('period_start'):
                     er_kwargs['period_start'] = p['period_start']
                 if p.get('period_end'):
@@ -129,7 +133,7 @@ class UploadView(APIView):
                     except Exception:
                         er_kwargs['quantity_normalized'] = qty_raw
                         er_kwargs['unit_normalized'] = unit
-                        er_kwargs['flagged_reasons'].append('Unit conversion failed — CO2e not calculated')
+                        er_kwargs['flagged_reasons'].append('Unit conversion failed')
                         er_kwargs['review_status'] = 'FLAGGED'
 
                 elif data_source.source_type == 'TRAVEL':
@@ -141,14 +145,12 @@ class UploadView(APIView):
                     er_kwargs['co2e_kg'] = p.get('co2e_kg')
 
                 er = EmissionRecord.objects.create(**er_kwargs)
-
                 AuditLog.objects.create(
                     emission_record=er,
                     actor=request.user,
                     action='CREATED',
                     new_values={'source': data_source.source_type, 'batch': str(batch.id)},
                 )
-
                 created_records.append(str(er.id))
 
             batch.row_count = len(parsed_rows)
@@ -167,7 +169,11 @@ class UploadView(APIView):
             }, status=201)
 
         except Exception as e:
-            batch.status = 'FAILED'
-            batch.notes = str(e)
-            batch.save()
-            return Response({'error': str(e), 'batch_id': str(batch.id)}, status=500)
+            if batch:
+                batch.status = 'FAILED'
+                batch.notes = str(e)
+                batch.save()
+            return Response({
+                'error': str(e),
+                'detail': traceback.format_exc(),
+            }, status=500)
