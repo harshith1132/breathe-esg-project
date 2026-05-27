@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 
 
 class Organization(models.Model):
+   
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True)
@@ -14,6 +15,7 @@ class Organization(models.Model):
 
 
 class UserProfile(models.Model):
+ 
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='members')
     role = models.CharField(max_length=32, choices=[('admin','Admin'),('analyst','Analyst'),('viewer','Viewer')], default='analyst')
@@ -21,12 +23,13 @@ class UserProfile(models.Model):
     def __str__(self):
         return f"{self.user.email} ({self.organization.slug})"
 
-
+ 
 class DataSource(models.Model):
-    SOURCE_TYPES = [('SAP','SAP Fuel & Procurement'),('UTILITY','Utility Electricity'),('TRAVEL','Corporate Travel')]
+    
+    SOURCETYPES = [('SAP','SAP Fuel & Procurement'),('UTILITY','Utility Electricity'),('TRAVEL','Corporate Travel')]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='data_sources')
-    source_type = models.CharField(max_length=16, choices=SOURCE_TYPES)
+    source_type = models.CharField(max_length=16, choices=SOURCETYPES)
     name = models.CharField(max_length=255)
     config = models.JSONField(default=dict, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -55,12 +58,12 @@ class IngestionBatch(models.Model):
 
 
 class RawRecord(models.Model):
-    PARSE_STATUS = [('OK','Parsed successfully'),('WARNING','Parsed with warnings'),('ERROR','Parse failed')]
+    PARSESTATUS = [('OK','Parsed successfully'),('WARNING','Parsed with warnings'),('ERROR','Parse failed')]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     batch = models.ForeignKey(IngestionBatch, on_delete=models.CASCADE, related_name='raw_records')
     row_number = models.IntegerField()
     raw_data = models.JSONField()
-    parse_status = models.CharField(max_length=10, choices=PARSE_STATUS, default='OK')
+    parse_status = models.CharField(max_length=10, choices=PARSESTATUS, default='OK')
     parse_errors = models.JSONField(default=list)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -69,17 +72,17 @@ class RawRecord(models.Model):
 
 
 class EmissionRecord(models.Model):
-    SCOPE_CHOICES = [(1,'Scope 1 - Direct emissions'),(2,'Scope 2 - Purchased electricity'),(3,'Scope 3 - Value chain')]
-    CATEGORY_CHOICES = [('S1_FUEL_STATIONARY','Stationary combustion'),('S1_FUEL_MOBILE','Mobile combustion'),('S2_ELECTRICITY','Purchased electricity'),('S3_BUSINESS_TRAVEL_FLIGHT','Business travel - flight'),('S3_BUSINESS_TRAVEL_HOTEL','Business travel - hotel'),('S3_BUSINESS_TRAVEL_GROUND','Business travel - ground'),('S3_PROCUREMENT','Upstream procurement')]
-    REVIEW_STATUS = [('PENDING','Pending review'),('FLAGGED','Flagged'),('APPROVED','Approved'),('REJECTED','Rejected')]
+    SCOPECHOICES = [(1,'Scope 1 - Direct emissions'),(2,'Scope 2 - Purchased electricity'),(3,'Scope 3 - Value chain')]
+    CATEGORYCHOICES = [('S1_FUEL_STATIONARY','Stationary combustion'),('S1_FUEL_MOBILE','Mobile combustion'),('S2_ELECTRICITY','Purchased electricity'),('S3_BUSINESS_TRAVEL_FLIGHT','Business travel - flight'),('S3_BUSINESS_TRAVEL_HOTEL','Business travel - hotel'),('S3_BUSINESS_TRAVEL_GROUND','Business travel - ground'),('S3_PROCUREMENT','Upstream procurement')]
+    REVIEWSTATUS = [('PENDING','Pending review'),('FLAGGED','Flagged'),('APPROVED','Approved'),('REJECTED','Rejected')]
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     organization = models.ForeignKey(Organization, on_delete=models.CASCADE, related_name='emission_records')
     batch = models.ForeignKey(IngestionBatch, on_delete=models.CASCADE, related_name='emission_records')
     raw_record = models.OneToOneField(RawRecord, on_delete=models.CASCADE, related_name='emission_record', null=True)
     data_source = models.ForeignKey(DataSource, on_delete=models.SET_NULL, null=True)
-    scope = models.IntegerField(choices=SCOPE_CHOICES)
-    category = models.CharField(max_length=64, choices=CATEGORY_CHOICES)
+    scope = models.IntegerField(choices=SCOPECHOICES)
+    category = models.CharField(max_length=64, choices=CATEGORYCHOICES)
     activity_date = models.DateField(null=True, blank=True)
     period_start = models.DateField(null=True, blank=True)
     period_end = models.DateField(null=True, blank=True)
@@ -97,7 +100,7 @@ class EmissionRecord(models.Model):
     co2e_kg = models.DecimalField(max_digits=18, decimal_places=4, null=True)
     flagged_reasons = models.JSONField(default=list)
     is_estimated = models.BooleanField(default=False)
-    review_status = models.CharField(max_length=16, choices=REVIEW_STATUS, default='PENDING')
+    review_status = models.CharField(max_length=16, choices=REVIEWSTATUS, default='PENDING')
     reviewed_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='reviewed_records')
     reviewed_at = models.DateTimeField(null=True, blank=True)
     review_notes = models.TextField(blank=True)
@@ -117,11 +120,11 @@ class EmissionRecord(models.Model):
 
 
 class AuditLog(models.Model):
-    ACTION_CHOICES = [('CREATED','Record created'),('EDITED','Field edited'),('APPROVED','Approved'),('REJECTED','Rejected'),('FLAGGED','Flagged'),('LOCKED','Locked'),('NOTE_ADDED','Note added')]
+    CHOICES = [('CREATED','Record created'),('EDITED','Field edited'),('APPROVED','Approved'),('REJECTED','Rejected'),('FLAGGED','Flagged'),('LOCKED','Locked'),('NOTE_ADDED','Note added')]
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     emission_record = models.ForeignKey(EmissionRecord, on_delete=models.CASCADE, related_name='audit_log')
     actor = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
-    action = models.CharField(max_length=16, choices=ACTION_CHOICES)
+    action = models.CharField(max_length=16, choices=CHOICES)
     old_values = models.JSONField(default=dict)
     new_values = models.JSONField(default=dict)
     note = models.TextField(blank=True)

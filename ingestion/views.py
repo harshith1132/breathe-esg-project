@@ -14,9 +14,8 @@ PARSER_MAP = {
     'TRAVEL': parse_travel_csv,
 }
 
-ELECTRICITY_EF = 0.20493   # kgCO2e/kWh, DEFRA 2023 UK grid average
-DIESEL_EF = 2.68801        # kgCO2e/liter, DEFRA 2023
-
+ELECTRICITY = 0.20493   
+DIESEL = 2.68801        
 
 class UploadView(APIView):
     parser_classes = [MultiPartParser]
@@ -112,10 +111,10 @@ class UploadView(APIView):
                     kwh = p.get('usage_kwh') or qty_raw
                     er_kwargs['quantity_normalized'] = kwh
                     er_kwargs['unit_normalized'] = 'kWh'
-                    er_kwargs['emission_factor'] = ELECTRICITY_EF
+                    er_kwargs['emission_factor'] = ELECTRICITY
                     er_kwargs['emission_factor_unit'] = 'kgCO2e/kWh'
                     er_kwargs['emission_factor_source'] = 'DEFRA 2023'
-                    er_kwargs['co2e_kg'] = round(kwh * ELECTRICITY_EF, 4) if kwh else None
+                    er_kwargs['co2e_kg'] = round(kwh * ELECTRICITY, 4) if kwh else None
 
                 elif data_source.source_type == 'SAP':
                     try:
@@ -123,10 +122,10 @@ class UploadView(APIView):
                         liters, _ = normalize_volume(qty_raw, unit)
                         er_kwargs['quantity_normalized'] = liters
                         er_kwargs['unit_normalized'] = 'liters'
-                        er_kwargs['emission_factor'] = DIESEL_EF
+                        er_kwargs['emission_factor'] = DIESEL
                         er_kwargs['emission_factor_unit'] = 'kgCO2e/liter'
                         er_kwargs['emission_factor_source'] = 'DEFRA 2023'
-                        er_kwargs['co2e_kg'] = round(liters * DIESEL_EF, 4)
+                        er_kwargs['co2e_kg'] = round(liters * DIESEL, 4)
                     except Exception:
                         er_kwargs['quantity_normalized'] = qty_raw
                         er_kwargs['unit_normalized'] = unit
